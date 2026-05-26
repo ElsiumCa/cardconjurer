@@ -5015,3 +5015,107 @@ loadScript('/js/frames/groupStandard-3.js');
 loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
 loadAvailableCards();
 initDraggableArt();
+
+// ==========================================
+// DECK BUILDER & PDF GENERATOR WORKFLOW
+// ==========================================
+
+// Global state for deck memory
+let deckArray = [];
+
+// Try to recover state from localStorage if available
+try {
+    const savedDeck = localStorage.getItem('mtgDeckArray');
+    if (savedDeck) {
+        deckArray = JSON.parse(savedDeck);
+    }
+} catch (e) {
+    console.warn("Could not read deck from localStorage", e);
+}
+
+// Function to update UI counter
+function updateDeckCounter() {
+    const counter = document.getElementById('deck-counter');
+    if (counter) {
+        counter.innerText = `Cards in deck: ${deckArray.length}`;
+    }
+}
+
+// Ensure counter is updated when the UI loads
+document.addEventListener("DOMContentLoaded", updateDeckCounter);
+// Also try to update it immediately in case htmx injected it
+setTimeout(updateDeckCounter, 1000); 
+
+function addToDeck() {
+    // The main canvas is 'previewCanvas' in Card Conjurer
+    const canvas = document.getElementById('previewCanvas');
+    if (!canvas) {
+        alert("Canvas not found!");
+        return;
+    }
+    
+    // Use JPEG with 0.9 quality to balance memory and print quality
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    deckArray.push(dataUrl);
+    
+    // Save to localStorage if possible
+    try {
+        localStorage.setItem('mtgDeckArray', JSON.stringify(deckArray));
+    } catch (e) {
+        console.warn("LocalStorage full, deck exists in RAM only.", e);
+        if (deckArray.length === 10) { // Just a warning on the 10th card
+            alert("Storage capacity reached. The deck is now saved in temporary memory and will be lost if you refresh the page.");
+        }
+    }
+    
+    updateDeckCounter();
+}
+
+function clearDeck() {
+    if (confirm("Are you sure you want to clear your entire deck?")) {
+        deckArray = [];
+        try {
+            localStorage.removeItem('mtgDeckArray');
+        } catch (e) {}
+        updateDeckCounter();
+    }
+}
+
+function generateDeckPDF() {
+    if (deckArray.length === 0) {
+        alert("Your deck is empty!");
+        return;
+    }
+    
+    // Initialize jsPDF globally
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+    });
+    
+    const cardWidth = 63;
+    const cardHeight = 88;
+    const gap = 2;
+    const startX = 8.5; // Centers 3 cards + gaps on 210mm wide A4
+    const startY = 14.5; // Centers 3 cards + gaps on 297mm tall A4
+    
+    for (let i = 0; i < deckArray.length; i++) {
+        // Add a new page every 9 cards (but not before the first card)
+        if (i > 0 && i % 9 === 0) {
+            doc.addPage();
+        }
+        
+        const pageIndex = i % 9;
+        const col = pageIndex % 3;
+        const row = Math.floor(pageIndex / 3);
+        
+        const x = startX + col * (cardWidth + gap);
+        const y = startY + row * (cardHeight + gap);
+        
+        doc.addImage(deckArray[i], 'JPEG', x, y, cardWidth, cardHeight);
+    }
+    
+    doc.save('my-commander-deck.pdf');
+}

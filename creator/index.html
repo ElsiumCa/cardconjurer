@@ -790,10 +790,11 @@
 					<h3 class='download padding' onclick='downloadCard();'>Download your card</h3>
 					<h5 onclick='downloadCard(false, true);' id='downloadJpg' href='' target='_blank' class='padding download input-description'>Click here to download as JPEG</h5>
 					<h5 onclick='downloadCard(true);' id='downloadAlt' href='' target='_blank' class='padding download input-description'>Click here for an alternative download</h5>
-					<!-- <label class='checkbox-container input margin-bottom'>800 DPI
-						<input id='high-res' type='checkbox' onchange='toggleHighRes();'>
-						<span class='checkmark'></span>
-					</label> -->
+					<hr style="margin: 20px 0; border-color: #444;">
+					<h3 class='download padding' style="background-color: #28a745; color: white;" onclick='addToDeck();'>Add to Deck</h3>
+					<h5 id='deck-counter' class='padding input-description'>Cards in deck: 0</h5>
+					<h3 class='download padding' style="background-color: #007bff; color: white;" onclick='generateDeckPDF();'>Generate Deck PDF</h3>
+					<h5 onclick='clearDeck();' class='padding download input-description' style="color: #dc3545; cursor: pointer;">Clear Deck (Reset)</h5>
 				</div>
 
 			</div>
